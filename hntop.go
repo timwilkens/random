@@ -36,10 +36,10 @@ type Post struct {
 }
 
 func (r *Response) makeOutputLines() []string {
-    output := make([]string, numberOfItems * 2 + 1)
+    output := make([]string, numberOfItems * linesPerItem + 1)
     output[0] = fmt.Sprintf("[%s]", nowString())
 
-    for i := 1; i < numberOfItems * 2 + 1; i += 2 {
+    for i := 1; i < numberOfItems * linesPerItem + 1; i += linesPerItem {
         output[i] = fmt.Sprintf("%s%s%s [%d]", boldOn, r.Items[i].Title, boldOff, r.Items[i].Points)
         output[i + 1] = fmt.Sprintf("  %s", r.Items[i].Url)
     }
@@ -57,11 +57,13 @@ func nowString() string {
 // The number of posts to print.
 const numberOfItems = 15
 
+const linesPerItem = 2
+
 // Number of lines to print initially to line up cursor.
-var newLines = strings.Repeat("\n", numberOfItems * 2 + 1)
+var newLines = strings.Repeat("\n", numberOfItems * linesPerItem + 1)
 
 // How many lines to jump back to reset cursor.
-var returns = strings.Repeat("\033[F", numberOfItems * 2 + 1)
+var returns = strings.Repeat("\033[F", numberOfItems * linesPerItem + 1)
 
 // Escape sequences to turn on and off bold.
 const boldOn = "\033[1m"
