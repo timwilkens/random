@@ -36,12 +36,15 @@ type Post struct {
 }
 
 func (r *Response) makeOutputLines() []string {
-    output := make([]string, numberOfItems * linesPerItem + 1)
+    output := make([]string, (numberOfItems * linesPerItem) + 1)
     output[0] = fmt.Sprintf("[%s]", nowString())
 
-    for i := 1; i < numberOfItems * linesPerItem + 1; i += linesPerItem {
-        output[i] = fmt.Sprintf("%s%s%s [%d]", boldOn, r.Items[i].Title, boldOff, r.Items[i].Points)
-        output[i + 1] = fmt.Sprintf("  %s", r.Items[i].Url)
+    j := 1
+    for i := 1; i < numberOfItems; i += 1 {
+        output[j] = fmt.Sprintf("%s%s%s [%d]", boldOn, r.Items[i].Title, boldOff, r.Items[i].Points)
+        output[j + 1] = fmt.Sprintf("  https://news.ycombinator.com/item?id=%d", r.Items[i].Id)
+        output[j + 2] = fmt.Sprintf("  %s", r.Items[i].Url)
+        j += linesPerItem
     }
     return output
 }
@@ -57,7 +60,7 @@ func nowString() string {
 // The number of posts to print.
 const numberOfItems = 15
 
-const linesPerItem = 2
+const linesPerItem = 3
 
 // Number of lines to print initially to line up cursor.
 var newLines = strings.Repeat("\n", numberOfItems * linesPerItem + 1)
