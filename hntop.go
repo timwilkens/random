@@ -35,15 +35,26 @@ type Post struct {
     PostedAgo    string
 }
 
+func truncateString (s string, length int) string {
+    if len(s) > length {
+        s = s[:maxCharsPerLine - 3]
+        s += "..."
+    }
+    return s
+}
+
 func (r *Response) makeOutputLines() []string {
     output := make([]string, (numberOfItems * linesPerItem) + 1)
     output[0] = fmt.Sprintf("[%s]", nowString())
 
     j := 1
-    for i := 1; i < numberOfItems; i += 1 {
-        output[j] = fmt.Sprintf("%s%s%s [%d]", boldOn, r.Items[i].Title, boldOff, r.Items[i].Points)
-        output[j + 1] = fmt.Sprintf("  https://news.ycombinator.com/item?id=%d", r.Items[i].Id)
-        output[j + 2] = fmt.Sprintf("  %s", r.Items[i].Url)
+    for i := 1; i <= numberOfItems; i += 1 {
+        title := truncateString(r.Items[i].Title, maxCharsPerLine - 7)
+        output[j] = fmt.Sprintf("%s%s%s [%d]", boldOn, title, boldOff, r.Items[i].Points)
+        commentLine := fmt.Sprintf("  https://news.ycombinator.com/item?id=%d", r.Items[i].Id)
+        output[j + 1] = truncateString(commentLine, maxCharsPerLine)
+        linkLine := fmt.Sprintf("  %s", r.Items[i].Url)
+        output[j + 2] = truncateString(linkLine, maxCharsPerLine)
         j += linesPerItem
     }
     return output
@@ -62,6 +73,8 @@ const numberOfItems = 15
 
 const linesPerItem = 3
 
+const maxCharsPerLine = 90
+
 // Number of lines to print initially to line up cursor.
 var newLines = strings.Repeat("\n", numberOfItems * linesPerItem + 1)
 
@@ -79,18 +92,28 @@ func main() {
     var response Response
     var previousLines []string
 
+    content,err := fetch(hackerMain)
+    if err != nil {
+        panic(fmt.Sprintf("[ERROR] content fetch failed: %s", err))
+    }
+
+    err = json.Unmarshal(content, &response)
+    if err != nil {
+        panic(fmt.Sprintf("[ERROR] bad json: %s", err))
+    }
+
     // Set cursor to end of normal output.
     fmt.Printf(newLines)
 
     for {
         content,err := fetch(hackerMain)
         if err != nil {
-            panic(err)
+            panic(fmt.Sprintf("[ERROR] content fetch failed: %s", err))
         }
 
         err = json.Unmarshal(content, &response)
         if err != nil {
-            panic(err)
+            panic(fmt.Sprintf("[ERROR] bad json: %s", err))
         }
 
         // Reset cursor to print over previous.
@@ -118,5 +141,15 @@ func main() {
         // Store current for next round of printing.
         previousLines = lines
         time.Sleep(time.Second * 60 * 5) // Every five minutes.
+
+        content,err = fetch(hackerMain)
+        if err != nil {
+            panic(fmt.Sprintf("[ERROR] content fetch failed: %s", err))
+        }
+
+        err = json.Unmarshal(content, &response)
+        if err != nil {
+            panic(fmt.Sprintf("[ERROR] bad json: %s", err))
+        }
     }
 }
