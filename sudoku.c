@@ -206,6 +206,26 @@ clean_up(Board *b) {
 }
 
 int
+is_solved(Board *b) {
+
+    int i, j;
+    for (i = 0; i < 9; i++) {
+        int row_total = 0;
+        int column_total = 0;
+        int square_total = 0;
+        for (j = 0; j < 9; j++) {
+            row_total += int_from_bit_vec(b->rows[i][j]->options);
+            column_total += int_from_bit_vec(b->columns[i][j]->options);
+            square_total += int_from_bit_vec(b->squares[i][j]->options);
+        }
+        if ((row_total ^ column_total ^ square_total) != 45) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int
 main() {
     int values[81] = { 0,4,5,8,0,3,7,1,0,
                        8,1,0,0,0,0,0,2,4,
@@ -222,17 +242,15 @@ main() {
     show_board(b);
     printf("\n\n");
 
-    int i;
-    for (i = 0; i < 10; i++) {
-        set_value_if_one_option(b);
+    while (!is_solved(b)) {
         remove_row_options(b);
         set_value_if_one_option(b);
         remove_column_options(b);
         set_value_if_one_option(b);
         remove_square_options(b);
+        set_value_if_one_option(b);
     }
 
-    set_value_if_one_option(b);
     show_board(b);
 
     clean_up(b);
