@@ -98,7 +98,6 @@ void show_board(Board *b) {
 
 void
 set_cell_value(Cell *c, int value) {
-    // Caller must not provide an invalid value (not 0-9)
     c->options = null_options;
     c->value = value;
 }
@@ -113,7 +112,7 @@ remove_cell_option(Cell *c, int option) {
 }
 
 int
-value_from_options(int options) {
+only_option(int options) {
     // Return 0 for not found.
     if (options == null_options) {
         return 0;
@@ -131,7 +130,6 @@ value_from_options(int options) {
     return 0;
 }
 
-// Set values based on available options in a row.
 void
 remove_row_options(Board *b) {
     int row, j, k;
@@ -183,12 +181,12 @@ remove_square_options(Board *b) {
 // Our routine that should set values.
 // Only set a value once it has ONE option left.
 void
-condense_only_one(Board *b) {
+set_value_if_one_option(Board *b) {
     int i;
     for (i = 0; i < number_of_cells; i++) {
-        int possible = value_from_options(b->cells[i]->options);
-        if (possible) {
-            set_cell_value(b->cells[i], possible);
+        int only_one = only_option(b->cells[i]->options);
+        if (only_one) {
+            set_cell_value(b->cells[i], only_one);
         }
     }
 }
@@ -221,12 +219,15 @@ main() {
 
     int i;
     for (i = 0; i < 10; i++) {
-        condense_only_one(b);
+        set_value_if_one_option(b);
         remove_row_options(b);
+        set_value_if_one_option(b);
         remove_column_options(b);
+        set_value_if_one_option(b);
         remove_square_options(b);
-        condense_only_one(b);
     }
+
+    set_value_if_one_option(b);
     show_board(b);
 
     clean_up(b);
