@@ -28,11 +28,12 @@ type Response struct {
 }
 
 type Post struct {
-	Title     string
-	Url       string
-	Id        int
-	Points    int
-	PostedAgo string
+	Title          string
+	Url            string
+	Id             int
+	Points         int
+	PostedAgo      string
+	PositionChange string
 }
 
 func truncateString(s string, length int) string {
@@ -50,7 +51,7 @@ func (r *Response) makeOutputLines() []string {
 	j := 1
 	for i := 1; i <= numberOfItems; i += 1 {
 		title := truncateString(r.Items[i].Title, maxCharsPerLine-7)
-		output[j] = fmt.Sprintf("%s%s%s [%d]", boldOn, title, boldOff, r.Items[i].Points)
+		output[j] = fmt.Sprintf("%s %s%s%s [%d]", r.Items[i].PositionChange, boldOn, title, boldOff, r.Items[i].Points)
 		commentLine := fmt.Sprintf("  https://news.ycombinator.com/item?id=%d", r.Items[i].Id)
 		output[j+1] = truncateString(commentLine, maxCharsPerLine)
 		linkLine := fmt.Sprintf("  %s", r.Items[i].Url)
@@ -85,12 +86,18 @@ var returns = strings.Repeat("\033[F", numberOfItems*linesPerItem+1)
 const boldOn = "\033[1m"
 const boldOff = "\033[0m"
 
+const upArrow = `▲`
+const downArrow = `▼`
+const neutral = `—`
+const newPost = `★`
+
 const hackerMain = "http://api.ihackernews.com/page"
 
 func main() {
 
 	var response Response
 	var previousLines []string
+	rankings := make(map[int]int)
 
 	content, err := fetch(hackerMain)
 	if err != nil {
@@ -121,6 +128,21 @@ func main() {
 
 		if len(response.Items) == 0 {
 			panic("[ERROR] Json had no posts.")
+		}
+
+		for i, post := range response.Items {
+			if rank, ok := rankings[post.Id]; ok {
+				if rank > i {
+					response.Items[i].PositionChange = downArrow
+				} else if rank < i {
+					response.Items[i].PositionChange = upArrow
+				} else {
+					response.Items[i].PositionChange = neutral
+				}
+			} else {
+				response.Items[i].PositionChange = newPost
+			}
+			rankings[post.Id] = i
 		}
 
 		lines := response.makeOutputLines()
