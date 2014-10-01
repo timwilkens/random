@@ -78,26 +78,7 @@ new_board(int values[81]) {
         b->squares[i][k] = b->cells[j + 20];
     }
 
-
     return b;
-}
-
-void
-show_cell_options(Cell *c) {
-    if (c->options == null_options) {
-        printf("\tVALUE: %d\n", c->value);
-    } else {
-        int i;
-        int j = 1;
-        printf("\t");
-        for (i = 1; i <= 256 ; i *= 2) {
-            if (c->options & i) {
-                printf("%d, ", j);
-            }
-            j++;
-        }
-        printf("\n");
-    }
 }
 
 void show_board(Board *b) {
@@ -212,6 +193,15 @@ condense_only_one(Board *b) {
     }
 }
 
+void
+clean_up(Board *b) {
+    int i;
+    for (i = 0; i < number_of_cells; i++) {
+        free(b->cells[i]);
+    }
+    free(b);
+}
+
 int
 main() {
     int values[81] = { 0,4,5,8,0,3,7,1,0,
@@ -238,6 +228,8 @@ main() {
         condense_only_one(b);
     }
     show_board(b);
+
+    clean_up(b);
 
     return 0;
 }
