@@ -17,6 +17,25 @@ static int number_of_cells = 81;
 static int default_options = 0x01ff;
 static int null_options = 0xfe00;
 
+int
+bit_vec_from_int(int n) {
+    return n ? 1 << (n - 1) : 0;
+}
+
+int
+int_from_bit_vec(int n) {
+    if ((n & (n - 1)) == 0) {
+        int i;
+        for (i = 1; i <= 9; i++) {
+            if (n & 1) {
+                return i;
+            }
+            n >>= 1;
+        }
+    }
+    return 0;
+}
+
 Cell *
 new_cell(int value) {
     Cell *c = (Cell *)malloc(sizeof(Cell));
@@ -25,7 +44,7 @@ new_cell(int value) {
         c->value = 0;
     } else {
         c->options = null_options;
-        c->value = value;
+        c->value = bit_vec_from_int(value);
     }
     return c;
 }
@@ -81,10 +100,11 @@ new_board(int values[81]) {
     return b;
 }
 
-void show_board(Board *b) {
+void
+show_board(Board *b) {
     int i;
     for (i = 0; i < number_of_cells; i++) {
-        int value = b->cells[i]->value;
+        int value = int_from_bit_vec(b->cells[i]->value);
         if (value == 0) {
             printf(" - ");
         } else {
@@ -99,16 +119,15 @@ void show_board(Board *b) {
 void
 set_cell_value(Cell *c, int value) {
     c->options = null_options;
-    c->value = value;
+    c->value = bit_vec_from_int(value);
 }
 
 void
 remove_cell_option(Cell *c, int option) {
-    int mask = (1 << (option - 1));
-    if (!(c->options & mask)) {
+    if (!(c->options & option)) {
         return; // Already removed this option.
     }
-    c->options ^= mask;
+    c->options ^= option;
 }
 
 int
@@ -118,16 +137,7 @@ only_option(int options) {
         return 0;
     }
 
-    if (options != 0 && (options & (options - 1)) == 0) {
-        int i;
-        for (i = 1; i <= 9; i++) {
-            if (options & 1) {
-                return i;
-            }
-            options >>= 1;
-        }
-    }
-    return 0;
+    return int_from_bit_vec(options);
 }
 
 void
