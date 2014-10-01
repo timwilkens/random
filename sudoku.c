@@ -3,7 +3,6 @@
 
 typedef struct {
   int options;
-  int value;
 } Cell;
 
 typedef struct {
@@ -15,7 +14,6 @@ typedef struct {
 
 static int number_of_cells = 81;
 static int default_options = 0x01ff;
-static int null_options = 0xfe00;
 
 int
 bit_vec_from_int(int n) {
@@ -41,10 +39,8 @@ new_cell(int value) {
     Cell *c = (Cell *)malloc(sizeof(Cell));
     if (value == 0) {
         c->options = default_options; 
-        c->value = 0;
     } else {
-        c->options = null_options;
-        c->value = bit_vec_from_int(value);
+        c->options = bit_vec_from_int(value);
     }
     return c;
 }
@@ -104,7 +100,7 @@ void
 show_board(Board *b) {
     int i;
     for (i = 0; i < number_of_cells; i++) {
-        int value = int_from_bit_vec(b->cells[i]->value);
+        int value = int_from_bit_vec(b->cells[i]->options);
         if (value == 0) {
             printf(" - ");
         } else {
@@ -118,8 +114,7 @@ show_board(Board *b) {
 
 void
 set_cell_value(Cell *c, int value) {
-    c->options = null_options;
-    c->value = bit_vec_from_int(value);
+    c->options = bit_vec_from_int(value);
 }
 
 void
@@ -132,8 +127,8 @@ remove_cell_option(Cell *c, int option) {
 
 int
 only_option(int options) {
-    // Return 0 for not found.
-    if (options == null_options) {
+    // Doesn't have a single bit set.
+    if (!int_from_bit_vec(options)) {
         return 0;
     }
 
@@ -145,12 +140,12 @@ remove_row_options(Board *b) {
     int row, j, k;
     for (row = 0; row < 9; row++) {
         for (j = 0; j < 9; j++) {
-            if (b->rows[row][j]->options != null_options) {
+            if (!int_from_bit_vec(b->rows[row][j]->options)) {
                 continue;
             }
             for (k = 0; k < 9; k++) {
                 if (j == k) { continue; }
-                remove_cell_option(b->rows[row][k], b->rows[row][j]->value);
+                remove_cell_option(b->rows[row][k], b->rows[row][j]->options);
             }
         }
     }
@@ -161,12 +156,12 @@ remove_column_options(Board *b) {
     int i, j, k;
     for (i = 0; i < 9; i++) {
         for (j = 0; j < 9; j++) {
-            if (b->columns[i][j]->options != null_options) {
+            if (!int_from_bit_vec(b->columns[i][j]->options)) {
                 continue;
             }
             for (k = 0; k < 9; k++) {
                 if (j == k) { continue; }
-                remove_cell_option(b->columns[i][k], b->columns[i][j]->value);
+                remove_cell_option(b->columns[i][k], b->columns[i][j]->options);
             }
         }
     }
@@ -177,12 +172,12 @@ remove_square_options(Board *b) {
     int i, j, k;
     for (i = 0; i < 9; i++) {
         for (j = 0; j < 9; j++) {
-            if (b->squares[i][j]->options != null_options) {
+            if (!int_from_bit_vec(b->squares[i][j]->options)) {
                 continue;
             }
             for (k = 0; k < 9; k++) {
                 if (j == k) { continue; }
-                remove_cell_option(b->squares[i][k], b->squares[i][j]->value);
+                remove_cell_option(b->squares[i][k], b->squares[i][j]->options);
             }
         }
     }
