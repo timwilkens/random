@@ -20,6 +20,8 @@ bit_vec_from_int(int n) {
     return n ? 1 << (n - 1) : 0;
 }
 
+// This doubles as a routine to check if a cell has it's value determined.
+// Return 0 if there are still multiple options.
 int
 int_from_bit_vec(int n) {
     if ((n & (n - 1)) == 0) {
@@ -225,32 +227,121 @@ is_solved(Board *b) {
     return 1;
 }
 
+void
+remove_only_avail(Board *b, int group_type) {
+
+    remove_column_options(b);
+    remove_row_options(b);
+    remove_square_options(b);
+
+    Cell *(*section)[9][9];
+    if (group_type == 0) {
+        section = &b->rows;
+    } else if (group_type == 1) {
+        section = &b->columns;
+    } else {
+        section = &b->squares;
+    }
+
+    int group, place, option, neighbor;
+    for (group = 0; group < 9; group++) {
+        for (place = 0; place < 9; place++) {
+            if (int_from_bit_vec((*section)[group][place]->options)) {
+                continue; // Skip this cell since the value is set.
+            }
+            int bit_vec = (*section)[group][place]->options;
+            for (option = 1; option <= 9; option++) {
+                int mask = 1 << (option - 1);
+                if (bit_vec & mask) { // We have this option available to us
+                    int only = 1;
+                    for (neighbor = 0; neighbor < 9; neighbor++) {
+                        if (neighbor == place) {
+                            continue;
+                        }
+                        if ((*section)[group][neighbor]->options & mask) { // Is there another one with this option?
+                            only = 0;
+                            break;
+                        }
+                    }
+                    if (only) {
+                        set_cell_value((*section)[group][place], option);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void
+row_only_avail(Board *b) {
+    remove_only_avail(b, 0);
+}
+
+void
+col_only_avail(Board *b) {
+    remove_only_avail(b, 1);
+}
+
+void
+square_only_avail(Board *b) {
+    remove_only_avail(b, 2);
+}
+
 int
 main() {
-    int values[81] = { 0,0,0,2,0,0,0,6,3,
-                       3,0,0,0,0,5,4,0,1,
-                       0,0,1,0,0,3,9,8,0,
-                       0,0,0,0,0,0,0,9,0,
-                       0,0,0,5,3,8,0,0,0,
-                       0,3,0,0,0,0,0,0,0,
-                       0,2,6,3,0,0,5,0,0,
-                       5,0,3,7,0,0,0,8,0,
-                       4,7,0,0,0,1,0,0,0
+
+    int hard[81] = { 0,0,0,0,7,0,1,0,0,
+                     0,0,0,9,0,0,0,0,2,
+                     3,4,0,0,0,8,0,0,0,
+                     6,7,1,0,0,0,0,2,0,
+                     0,0,5,0,1,0,9,0,0,
+                     0,2,0,0,0,0,6,8,1,
+                     0,0,0,6,0,0,0,4,9,
+                     5,0,0,0,0,9,0,0,0,
+                     0,0,6,0,8,0,0,0,0
+                   };
+
+    int medium[81] = { 0,0,0,9,0,7,0,0,0,
+                       9,0,0,0,0,0,0,0,8,
+                       0,3,0,4,0,5,0,2,0,
+                       3,0,7,0,4,0,2,0,6,
+                       0,0,0,5,0,9,0,0,0,
+                       8,0,9,0,2,0,1,0,3,
+                       0,7,0,6,0,4,0,3,0,
+                       2,0,0,0,0,0,0,0,9,
+                       0,0,0,1,0,2,0,0,0
                      };
 
-    Board *b = new_board(values);
+    int easy[81] = { 0,0,8,0,3,0,5,4,0,
+                     3,0,0,4,0,7,9,0,0,
+                     4,1,0,0,0,8,0,0,2,
+                     0,4,3,5,0,2,0,6,0,
+                     5,0,0,0,0,0,0,0,8,
+                     0,6,0,3,0,9,4,1,0,
+                     1,0,0,8,0,0,0,2,7,
+                     0,0,5,6,0,3,0,0,4,
+                     0,2,9,0,7,0,8,0,0
+                   };
+
+    Board *b = new_board(medium);
     show_board(b);
     printf("\n\n");
 
     while (!is_solved(b)) {
+
+        // Set values if a cell has only one option.
+        set_value_if_one_option(b);
+
+        // Remove options based on set values.
         remove_row_options(b);
-        set_value_if_one_option(b);
-
         remove_column_options(b);
-        set_value_if_one_option(b);
-
         remove_square_options(b);
-        set_value_if_one_option(b);
+
+        // Set values based on options available to neighbors.
+        row_only_avail(b);
+        col_only_avail(b);
+        square_only_avail(b);
     }
 
     show_board(b);
