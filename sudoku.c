@@ -218,32 +218,22 @@ remove_only_avail(Board *b, int group_type) {
         section = &b->squares;
     }
 
-    int group, place, option, neighbor;
+    int group, place, neighbor;
     for (group = 0; group < 9; group++) {
         for (place = 0; place < 9; place++) {
             if (int_from_bit_vec((*section)[group][place]->options)) {
                 continue; // Skip this cell since the value is set.
             }
             int bit_vec = (*section)[group][place]->options;
-            for (option = 1; option <= 9; option++) {
-                int mask = 1 << (option - 1);
-                if (bit_vec & mask) { // We have this option available to us
-                    int only = 1;
-                    for (neighbor = 0; neighbor < 9; neighbor++) {
-                        if (neighbor == place) {
-                            continue;
-                        }
-                        if ((*section)[group][neighbor]->options & mask) { // Is there another one with this option?
-                            only = 0;
-                            break;
-                        }
-                    }
-                    if (only) {
-                        set_cell_value((*section)[group][place], option);
-                        break;
-                    }
-                }
-            }
+            for (neighbor = 0; neighbor < 9; neighbor++) {
+				if (neighbor == place) {
+					continue;
+				}
+				bit_vec &= (bit_vec ^ (*section)[group][neighbor]->options);
+			}
+			if (int_from_bit_vec(bit_vec)) {
+				set_cell_value((*section)[group][place], int_from_bit_vec(bit_vec));
+			}
         }
     }
 }
