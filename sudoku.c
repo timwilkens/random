@@ -12,7 +12,7 @@ typedef struct {
     Cell *squares[9][9];
 } Board;
 
-static int number_of_cells = 81;
+static int NUMBER_OF_CELLS = 81;
 static int ALL_BITS = 0x01ff;
 
 int
@@ -52,7 +52,7 @@ new_board(int values[81]) {
     // Expect cells with no value to be passed in with a value of 0
     Board *b = (Board *)malloc(sizeof(Board));
     int i;
-    for (i = 0; i < number_of_cells; i++) {
+    for (i = 0; i < NUMBER_OF_CELLS; i++) {
         b->cells[i] = new_cell(values[i]); 
     }
 
@@ -97,7 +97,7 @@ new_board(int values[81]) {
 void
 show_board(Board *b) {
     int i;
-    for (i = 0; i < number_of_cells; i++) {
+    for (i = 0; i < NUMBER_OF_CELLS; i++) {
         int value = int_from_bit_vec(b->cells[i]->options);
         if (value == 0) {
             printf(" - ");
@@ -165,7 +165,7 @@ remove_square_options(Board *b) {
 void
 set_value_if_one_option(Board *b) {
     int i;
-    for (i = 0; i < number_of_cells; i++) {
+    for (i = 0; i < NUMBER_OF_CELLS; i++) {
         int value = int_from_bit_vec(b->cells[i]->options);
         if (value) {
             set_cell_value(b->cells[i], value);
@@ -176,7 +176,7 @@ set_value_if_one_option(Board *b) {
 void
 clean_up(Board *b) {
     int i;
-    for (i = 0; i < number_of_cells; i++) {
+    for (i = 0; i < NUMBER_OF_CELLS; i++) {
         free(b->cells[i]);
     }
     free(b);
