@@ -205,10 +205,6 @@ is_solved(Board *b) {
 void
 remove_only_avail(Board *b, int group_type) {
 
-    remove_column_options(b);
-    remove_row_options(b);
-    remove_square_options(b);
-
     Cell *(*section)[9][9];
     if (group_type == 0) {
         section = &b->rows;
@@ -226,13 +222,12 @@ remove_only_avail(Board *b, int group_type) {
             }
             int bit_vec = (*section)[group][place]->options;
             for (neighbor = 0; neighbor < 9; neighbor++) {
-				if (neighbor == place) {
-					continue;
-				}
+				if (neighbor == place) { continue; }
 				bit_vec &= (bit_vec ^ (*section)[group][neighbor]->options);
 			}
+			int value = int_from_bit_vec(bit_vec);
 			if (int_from_bit_vec(bit_vec)) {
-				set_cell_value((*section)[group][place], int_from_bit_vec(bit_vec));
+				set_cell_value((*section)[group][place], value);
 			}
         }
     }
