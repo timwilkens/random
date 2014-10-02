@@ -222,13 +222,13 @@ remove_only_avail(Board *b, int group_type) {
             }
             int bit_vec = (*section)[group][place]->options;
             for (neighbor = 0; neighbor < 9; neighbor++) {
-				if (neighbor == place) { continue; }
-				bit_vec &= (bit_vec ^ (*section)[group][neighbor]->options);
-			}
-			int value = int_from_bit_vec(bit_vec);
-			if (int_from_bit_vec(bit_vec)) {
-				set_cell_value((*section)[group][place], value);
-			}
+                if (neighbor == place) { continue; }
+                bit_vec &= (bit_vec ^ (*section)[group][neighbor]->options);
+            }
+            int value = int_from_bit_vec(bit_vec);
+            if (int_from_bit_vec(bit_vec)) {
+                set_cell_value((*section)[group][place], value);
+            }
         }
     }
 }
