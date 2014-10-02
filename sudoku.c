@@ -138,51 +138,43 @@ only_option(int options) {
 }
 
 void
-remove_row_options(Board *b) {
-    int row, j, k;
-    for (row = 0; row < 9; row++) {
+remove_options(Board *b, int group_type) {
+    Cell *(*section)[9][9];
+    if (group_type == 0) {
+        section = &b->rows;
+    } else if (group_type == 1) {
+        section = &b->columns;
+    } else {
+        section = &b->squares;
+    }
+
+    int i, j, k;
+    for (i = 0; i < 9; i++) {
         for (j = 0; j < 9; j++) {
-            if (!int_from_bit_vec(b->rows[row][j]->options)) {
+            if (!int_from_bit_vec((* section)[i][j]->options)) {
                 continue;
             }
             for (k = 0; k < 9; k++) {
                 if (j == k) { continue; }
-                remove_cell_option(b->rows[row][k], b->rows[row][j]->options);
+                remove_cell_option((* section)[i][k], (* section)[i][j]->options);
             }
         }
     }
+}
+
+void
+remove_row_options(Board *b) {
+    remove_options(b, 0);
 }
 
 void
 remove_column_options(Board *b) {
-    int i, j, k;
-    for (i = 0; i < 9; i++) {
-        for (j = 0; j < 9; j++) {
-            if (!int_from_bit_vec(b->columns[i][j]->options)) {
-                continue;
-            }
-            for (k = 0; k < 9; k++) {
-                if (j == k) { continue; }
-                remove_cell_option(b->columns[i][k], b->columns[i][j]->options);
-            }
-        }
-    }
+    remove_options(b, 1);
 }
 
 void
 remove_square_options(Board *b) {
-    int i, j, k;
-    for (i = 0; i < 9; i++) {
-        for (j = 0; j < 9; j++) {
-            if (!int_from_bit_vec(b->squares[i][j]->options)) {
-                continue;
-            }
-            for (k = 0; k < 9; k++) {
-                if (j == k) { continue; }
-                remove_cell_option(b->squares[i][k], b->squares[i][j]->options);
-            }
-        }
-    }
+    remove_options(b, 2);
 }
 
 // Our routine that should set values.
