@@ -117,10 +117,7 @@ set_cell_value(Cell *c, int value) {
 
 void
 remove_cell_option(Cell *c, int option) {
-    if (!(c->options & option)) {
-        return; // Already removed this option.
-    }
-    c->options ^= option;
+    c->options &= (c->options ^option);
 }
 
 void
