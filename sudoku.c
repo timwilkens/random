@@ -13,7 +13,7 @@ typedef struct {
 } Board;
 
 static int number_of_cells = 81;
-static int default_options = 0x01ff;
+static int ALL_BITS = 0x01ff;
 
 int
 bit_vec_from_int(int n) {
@@ -40,7 +40,7 @@ Cell *
 new_cell(int value) {
     Cell *c = (Cell *)malloc(sizeof(Cell));
     if (value == 0) {
-        c->options = default_options; 
+        c->options = ALL_BITS; 
     } else {
         c->options = bit_vec_from_int(value);
     }
@@ -187,15 +187,15 @@ is_solved(Board *b) {
 
     int i, j;
     for (i = 0; i < 9; i++) {
-        int row_total = 0;
-        int column_total = 0;
-        int square_total = 0;
+        int row_vec = 0;
+        int column_vec = 0;
+        int square_vec = 0;
         for (j = 0; j < 9; j++) {
-            row_total += int_from_bit_vec(b->rows[i][j]->options);
-            column_total += int_from_bit_vec(b->columns[i][j]->options);
-            square_total += int_from_bit_vec(b->squares[i][j]->options);
+            row_vec ^= b->rows[i][j]->options;
+            column_vec ^= b->columns[i][j]->options;
+            square_vec ^= b->squares[i][j]->options;
         }
-        if ((row_total ^ column_total ^ square_total) != 45) {
+        if ((row_vec & column_vec & square_vec) != ALL_BITS) {
             return 0;
         }
     }
