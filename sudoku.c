@@ -123,16 +123,6 @@ remove_cell_option(Cell *c, int option) {
     c->options ^= option;
 }
 
-int
-only_option(int options) {
-    // Doesn't have a single bit set.
-    if (!int_from_bit_vec(options)) {
-        return 0;
-    }
-
-    return int_from_bit_vec(options);
-}
-
 void
 remove_options(Board *b, int group_type) {
     Cell *(*section)[9][9];
@@ -179,7 +169,7 @@ void
 set_value_if_one_option(Board *b) {
     int i;
     for (i = 0; i < number_of_cells; i++) {
-        int only_one = only_option(b->cells[i]->options);
+        int only_one = int_from_bit_vec(b->cells[i]->options);
         if (only_one) {
             set_cell_value(b->cells[i], only_one);
         }
