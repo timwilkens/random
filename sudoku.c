@@ -80,19 +80,15 @@ new_board(int values[81]) {
                              54, 57, 60
                            };
 
-    int k;
     for (i = 0; i < 9; i++) {
         j = square_starts[i];
-        k = 0;
-        b->squares[i][k++] = b->cells[j];
-        b->squares[i][k++] = b->cells[j + 1];
-        b->squares[i][k++] = b->cells[j + 2];
-        b->squares[i][k++] = b->cells[j + 9];
-        b->squares[i][k++] = b->cells[j + 10];
-        b->squares[i][k++] = b->cells[j + 11];
-        b->squares[i][k++] = b->cells[j + 18];
-        b->squares[i][k++] = b->cells[j + 19];
-        b->squares[i][k] = b->cells[j + 20];
+        int k = 0;
+        int loop = j;
+        for (loop = j; loop < j + 19; loop += 9) {
+            b->squares[i][k++] = b->cells[loop];
+            b->squares[i][k++] = b->cells[loop + 1];
+            b->squares[i][k++] = b->cells[loop + 2];
+        }
     }
 
     return b;
