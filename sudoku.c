@@ -266,6 +266,24 @@ square_only_avail(Board *b) {
     remove_only_avail(b, 2);
 }
 
+void
+solve(Board *b) {
+    while (!is_solved(b)) {
+        // Set values if a cell has only one option.
+        set_value_if_one_option(b);
+
+        // Remove options based on set values.
+        remove_row_options(b);
+        remove_column_options(b);
+        remove_square_options(b);
+
+        // Set values based on options available to neighbors.
+        row_only_avail(b);
+        col_only_avail(b);
+        square_only_avail(b);
+    }
+}
+
 int
 main() {
 
@@ -306,24 +324,8 @@ main() {
     show_board(b);
     printf("\n\n");
 
-    while (!is_solved(b)) {
-
-        // Set values if a cell has only one option.
-        set_value_if_one_option(b);
-
-        // Remove options based on set values.
-        remove_row_options(b);
-        remove_column_options(b);
-        remove_square_options(b);
-
-        // Set values based on options available to neighbors.
-        row_only_avail(b);
-        col_only_avail(b);
-        square_only_avail(b);
-    }
-
+    solve(b);
     show_board(b);
-
     clean_up(b);
 
     return 0;
