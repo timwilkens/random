@@ -169,9 +169,9 @@ void
 set_value_if_one_option(Board *b) {
     int i;
     for (i = 0; i < number_of_cells; i++) {
-        int only_one = int_from_bit_vec(b->cells[i]->options);
-        if (only_one) {
-            set_cell_value(b->cells[i], only_one);
+        int value = int_from_bit_vec(b->cells[i]->options);
+        if (value) {
+            set_cell_value(b->cells[i], value);
         }
     }
 }
