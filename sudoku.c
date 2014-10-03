@@ -12,6 +12,8 @@ typedef struct {
     Cell *squares[9][9];
 } Board;
 
+Board *setup_metadata(Board *);
+
 static int NUMBER_OF_CELLS = 81;
 static int ALL_BITS = 0x01ff;
 
@@ -56,7 +58,12 @@ new_board(int values[81]) {
         b->cells[i] = new_cell(values[i]); 
     }
 
-    int column, place, j;
+    return setup_metadata(b);
+}
+
+Board *
+setup_metadata(Board *b) {
+    int column, place, i, j;
     for (column = 0; column < 9; column++) {
         place = 0;
         for (j = column; j < column + 73; j += 9) {
@@ -92,6 +99,16 @@ new_board(int values[81]) {
     }
 
     return b;
+}
+
+Board *
+clone(Board *b) {
+    Board *clone = (Board *)malloc(sizeof(Board));
+    int i;
+    for (i = 0; i < 81; i++) {
+        clone->cells[i] = b->cells[i];
+    }
+    return setup_metadata(b);
 }
 
 void
