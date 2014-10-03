@@ -324,10 +324,12 @@ solve(Board *b) {
                         set_cell_value(clone->cells[i], int_from_bit_vec(mask));
                         simple_solve(clone, 10);
                         if (is_solved(clone)) {
+                            clean_up(clone);
                             set_cell_value(b->cells[i], int_from_bit_vec(mask));
                             simple_solve(b, 100);
                             return;
                         }
+                        clean_up(clone);
                     }
                 }
             }
