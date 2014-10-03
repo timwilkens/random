@@ -41,11 +41,7 @@ int_from_bit_vec(int n) {
 Cell *
 new_cell(int value) {
     Cell *c = (Cell *)malloc(sizeof(Cell));
-    if (value == 0) {
-        c->options = ALL_BITS; 
-    } else {
-        c->options = bit_vec_from_int(value);
-    }
+    c->options = value ? bit_vec_from_int(value) : ALL_BITS;
     return c;
 }
 
