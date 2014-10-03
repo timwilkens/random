@@ -102,13 +102,13 @@ setup_metadata(Board *b) {
 }
 
 Board *
-clone(Board *b) {
+clone_board(Board *b) {
     Board *clone = (Board *)malloc(sizeof(Board));
     int i;
     for (i = 0; i < 81; i++) {
-        clone->cells[i] = b->cells[i];
+        clone->cells[i] = new_cell(int_from_bit_vec(b->cells[i]->options));
     }
-    return setup_metadata(b);
+    return setup_metadata(clone);
 }
 
 void
@@ -208,8 +208,17 @@ is_solved(Board *b) {
         int column_vec = 0;
         int square_vec = 0;
         for (j = 0; j < 9; j++) {
+            if (!int_from_bit_vec(b->rows[i][j]->options)) {
+                return 0;
+            }
             row_vec ^= b->rows[i][j]->options;
+            if (!int_from_bit_vec(b->columns[i][j]->options)) {
+                return 0;
+            }
             column_vec ^= b->columns[i][j]->options;
+            if (!int_from_bit_vec(b->squares[i][j]->options)) {
+                return 0;
+            }
             square_vec ^= b->squares[i][j]->options;
         }
         if ((row_vec & column_vec & square_vec) != ALL_BITS) {
@@ -266,8 +275,9 @@ square_only_avail(Board *b) {
 }
 
 void
-solve(Board *b) {
-    while (!is_solved(b)) {
+simple_solve(Board *b, int repeats) {
+    int i = 0;
+    for (i = 0; i < repeats; i++) {
         // Set values if a cell has only one option.
         set_value_if_one_option(b);
 
@@ -280,6 +290,48 @@ solve(Board *b) {
         row_only_avail(b);
         col_only_avail(b);
         square_only_avail(b);
+        if (is_solved(b)) {
+            return;
+        }
+    }
+}
+
+int
+bits_set(int n) {
+    int mask;
+    int set = 0;
+    for (mask = 1; mask < 512; mask <<= 1) {
+        if (n & mask) {set++;}
+    }
+    return set;
+}
+
+void
+solve(Board *b) {
+    simple_solve(b, 5);
+    if (!is_solved(b)) {
+        int i;
+        for (i = 0; i < 81; i++) {
+            if (int_from_bit_vec(b->cells[i]->options)) {
+                continue; // Value already set.
+            }
+            int bit_vec = b->cells[i]->options;
+            if (bits_set(bit_vec) <= 7) { // Proceed if we have less than 4 options left.
+                int mask;
+                for (mask = 1; mask < 512; mask <<= 1) {
+                    if (bit_vec & mask) {
+                        Board *clone = clone_board(b);
+                        set_cell_value(clone->cells[i], int_from_bit_vec(mask));
+                        simple_solve(clone, 10);
+                        if (is_solved(clone)) {
+                            set_cell_value(b->cells[i], int_from_bit_vec(mask));
+                            simple_solve(b, 100);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -319,7 +371,7 @@ main() {
                      0,2,9,0,7,0,8,0,0
                    };
 
-    Board *b = new_board(medium);
+    Board *b = new_board(hard);
     show_board(b);
     printf("\n\n");
 
