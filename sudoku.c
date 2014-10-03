@@ -307,7 +307,11 @@ bits_set(int n) {
 }
 
 void
-solve(Board *b) {
+_solve(Board *b, int depth) {
+    if (depth >= 5) {
+        return;
+    }
+
     simple_solve(b, 5);
     if (!is_solved(b)) {
         int i;
@@ -316,17 +320,17 @@ solve(Board *b) {
                 continue; // Value already set.
             }
             int bit_vec = b->cells[i]->options;
-            if (bits_set(bit_vec) <= 7) { // Proceed if we have less than 4 options left.
+            if (bits_set(bit_vec) <= 9) { // Proceed if we have less than 4 options left.
                 int mask;
                 for (mask = 1; mask < 512; mask <<= 1) {
                     if (bit_vec & mask) {
                         Board *clone = clone_board(b);
                         set_cell_value(clone->cells[i], int_from_bit_vec(mask));
-                        simple_solve(clone, 10);
+                        _solve(clone, depth + 1);
                         if (is_solved(clone)) {
                             clean_up(clone);
                             set_cell_value(b->cells[i], int_from_bit_vec(mask));
-                            simple_solve(b, 100);
+                            _solve(b, depth + 1);
                             return;
                         }
                         clean_up(clone);
@@ -337,8 +341,24 @@ solve(Board *b) {
     }
 }
 
+void
+solve(Board *b) {
+    _solve(b, 1);
+}
+
 int
 main() {
+
+    int hardest[81] = { 8,0,0,0,0,0,0,0,0,
+                        0,0,3,6,0,0,0,0,0,
+                        0,7,0,0,9,0,2,0,0,
+                        0,5,0,0,0,7,0,0,0,
+                        0,0,0,0,4,5,7,0,0,
+                        0,0,0,1,0,0,0,3,0,
+                        0,0,1,0,0,0,0,6,8,
+                        0,0,8,5,0,0,0,1,0,
+                        0,9,0,0,0,0,4,0,0,
+                      };
 
     int extreme[81] = { 5,0,0,0,0,0,8,0,0,
                         0,0,0,7,5,0,0,9,0,
@@ -384,7 +404,7 @@ main() {
                      0,2,9,0,7,0,8,0,0
                    };
 
-    Board *b = new_board(extreme);
+    Board *b = new_board(hardest);
     show_board(b);
     printf("\n\n");
 
