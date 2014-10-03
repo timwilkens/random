@@ -320,7 +320,7 @@ _solve(Board *b, int depth) {
                 continue; // Value already set.
             }
             int bit_vec = b->cells[i]->options;
-            if (bits_set(bit_vec) <= 9) { // Proceed if we have less than 4 options left.
+            if (bits_set(bit_vec) <= 6) { // Proceed if we have less than 6 options left.
                 int mask;
                 for (mask = 1; mask < 512; mask <<= 1) {
                     if (bit_vec & mask) {
