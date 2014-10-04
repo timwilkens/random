@@ -173,19 +173,6 @@ remove_square_options(Board *b) {
     remove_options(b, 2);
 }
 
-// Our routine that should set values.
-// Only set a value once it has ONE option left.
-void
-set_value_if_one_option(Board *b) {
-    int i;
-    for (i = 0; i < NUMBER_OF_CELLS; i++) {
-        int value = int_from_bit_vec(b->cells[i]->options);
-        if (value) {
-            set_cell_value(b->cells[i], value);
-        }
-    }
-}
-
 void
 clean_up(Board *b) {
     int i;
@@ -224,7 +211,7 @@ is_solved(Board *b) {
     return 1;
 }
 
-void
+int
 remove_only_avail(Board *b, int group_type) {
 
     Cell *(*section)[9][9];
@@ -236,6 +223,7 @@ remove_only_avail(Board *b, int group_type) {
         section = &b->squares;
     }
 
+    int changes = 0;
     int group, place, neighbor;
     for (group = 0; group < 9; group++) {
         for (place = 0; place < 9; place++) {
@@ -250,32 +238,34 @@ remove_only_avail(Board *b, int group_type) {
             int value = int_from_bit_vec(bit_vec);
             if (int_from_bit_vec(bit_vec)) {
                 set_cell_value((*section)[group][place], value);
+                changes += 1;
             }
         }
     }
+    return changes;
 }
 
-void
+int
 row_only_avail(Board *b) {
-    remove_only_avail(b, 0);
+    return remove_only_avail(b, 0);
 }
 
-void
+int
 col_only_avail(Board *b) {
-    remove_only_avail(b, 1);
+    return remove_only_avail(b, 1);
 }
 
-void
+int
 square_only_avail(Board *b) {
-    remove_only_avail(b, 2);
+    return remove_only_avail(b, 2);
 }
 
 void
-simple_solve(Board *b, int repeats) {
+simple_solve(Board *b) {
     int i = 0;
-    for (i = 0; i < repeats; i++) {
-        // Set values if a cell has only one option.
-        set_value_if_one_option(b);
+    int changes;
+    while (1) {
+        changes = 0;
 
         // Remove options based on set values.
         remove_row_options(b);
@@ -283,10 +273,15 @@ simple_solve(Board *b, int repeats) {
         remove_square_options(b);
 
         // Set values based on options available to neighbors.
-        row_only_avail(b);
-        col_only_avail(b);
-        square_only_avail(b);
+        changes += row_only_avail(b);
+        changes += col_only_avail(b);
+        changes += square_only_avail(b);
+
         if (is_solved(b)) {
+            return;
+        }
+
+        if (changes == 0) {
             return;
         }
     }
@@ -308,7 +303,7 @@ _solve(Board *b, int depth) {
         return;
     }
 
-    simple_solve(b, 5);
+    simple_solve(b);
     if (!is_solved(b)) {
         int i;
         for (i = 0; i < 81; i++) {
@@ -400,7 +395,7 @@ main() {
                      0,2,9,0,7,0,8,0,0
                    };
 
-    Board *b = new_board(hardest);
+    Board *b = new_board(extreme);
     show_board(b);
     printf("\n\n");
 
