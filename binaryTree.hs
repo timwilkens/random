@@ -5,6 +5,14 @@ data Tree a = Node (Tree a) a (Tree a)
 makeTree :: a -> Tree a
 makeTree x = Node Empty x Empty
 
+treeFromList :: Ord a => [a] -> Tree a
+treeFromList [] = Empty
+treeFromList (x:xs) = treeFromList' (makeTree x) xs
+
+treeFromList' :: Ord a => Tree a -> [a] -> Tree a
+treeFromList' t [] = t
+treeFromList' t (x:xs) = treeFromList' (addItem x t) xs
+
 addItem :: Ord a => a -> Tree a -> Tree a
 addItem x Empty = Node Empty x Empty
 addItem y t@(Node left x right)
@@ -35,3 +43,11 @@ sameTree (Node l1 x1 r1) (Node l2 x2 r2)
   | x1 == x2 = (sameTree l1 l2) && (sameTree l2 r2)
   | otherwise = False
 sameTree _ _ = False
+
+height :: Tree a -> Int
+height t = height' 0 t
+
+height' :: Int -> Tree a -> Int
+height' x Empty = x
+height' x (Node left _ right) =
+  max (height' (x + 1) left) (height' (x + 1) right)
