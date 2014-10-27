@@ -373,7 +373,7 @@ main() {
                      0,0,6,0,8,0,0,0,0
                    };
 
-    Board *b = new_board(extreme);
+    Board *b = new_board(hardest);
     show_board(b);
     printf("\n\n");
 
