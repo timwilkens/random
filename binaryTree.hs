@@ -10,11 +10,15 @@ treeFromList' :: Ord a => Tree a -> [a] -> Tree a
 treeFromList' t [] = t
 treeFromList' t (x:xs) = treeFromList' (addItem x t) xs
 
+treeToList :: Ord a => Tree a -> [a]
+treeToList Empty = []
+treeToList (Node left x right) = (treeToList left) ++ [x] ++ (treeToList right)
+
 addItem :: Ord a => a -> Tree a -> Tree a
 addItem x Empty = Node Empty x Empty
-addItem x t@(Node left val right)
-  |val < x = Node left val (addItem x right)
-  |val > x = Node (addItem x left) val right
+addItem x t@(Node left y right)
+  |y < x = Node left y (addItem x right)
+  |y > x = Node (addItem x left) y right
   |otherwise = t
 
 treeElem :: Ord a => a -> Tree a -> Bool
