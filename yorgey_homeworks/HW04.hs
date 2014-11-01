@@ -1,5 +1,9 @@
 module HW04 where
 
+import Data.Char
+import Data.List
+import Data.Maybe
+
 ex1 :: a -> b -> b
 ex1 x y = y
 {- This function must immediately return its second argument,
@@ -94,8 +98,44 @@ ex11 x = Just x
 
 ex12 :: Maybe a -> Maybe a
 ex12 Nothing = Nothing
-ex12 Just x = Nothing
+ex12 (Just x) = Nothing
 {- There are a couple functions that can satisfy this type signature. One is to force
    all arguments to Nothing and the other is identity. Importantly, no argument
    constructed with Nothing can be 'promoted' to Just a. We won't know the type of
    a so won't be able ot provide a default value. -}
+
+data BST a = Leaf
+           | Node (BST a) a (BST a)
+  deriving Show
+
+empty :: a -> BST a
+empty x = Node Leaf x Leaf
+
+insert' :: (a -> a -> Ordering) -> a -> BST a -> BST a
+insert' _ x Leaf = empty x
+insert' f y t@(Node l x r) = case f y x of
+  GT -> Node l x (insert' f y r)
+  LT -> Node (insert' f y l) x r
+  EQ -> t
+
+ex14 :: [String] -> Bool
+ex14 [] = True
+ex14 (x:xs)
+  | allUpper x = True && ex14 xs
+  | otherwise = False
+    where allUpper x = (length $ filter isUpper x) == length x
+
+ex15 :: String -> String
+ex15 [] = []
+ex15 x = reverse $ dropWhile (== ' ') $ reverse x
+
+safeHead :: [a] -> Maybe a
+safeHead [] = Nothing
+safeHead (x:_) = Just x
+
+ex16 :: [String] -> [Char]
+ex16 [] = []
+ex16 xs = map fromJust $ filter isJust $ map safeHead xs
+
+ex17 :: [String] -> String
+ex17 xs = "[" ++ (concat $ intersperse "," xs) ++ "]"
