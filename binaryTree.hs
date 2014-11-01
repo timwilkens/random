@@ -2,19 +2,16 @@ data Tree a = Node (Tree a) a (Tree a)
             | Empty
   deriving (Show, Eq)
 
-leaf :: Ord a => a -> Tree a
-leaf x = Node Empty x Empty
+instance Functor Tree where
+  fmap _ Empty = Empty
+  fmap f (Node l x r) = Node (fmap f l) (f x) (fmap f r)
 
 treeFromList :: Ord a => [a] -> Tree a
 treeFromList [] = Empty
-treeFromList (x:xs) = treeFromList' (leaf x) xs
-
-treeFromList' :: Ord a => Tree a -> [a] -> Tree a
-treeFromList' t [] = t
-treeFromList' t (x:xs) = treeFromList' (addItem x t) xs
+treeFromList xs = foldr addItem Empty xs
 
 addItem :: Ord a => a -> Tree a -> Tree a
-addItem x Empty = leaf x
+addItem x Empty = Node Empty x Empty
 addItem x t@(Node left y right)
   |y < x = Node left y (addItem x right)
   |y > x = Node (addItem x left) y right
