@@ -36,23 +36,22 @@ makeItem x = do
 	else do
       error $ "Bad item " ++ x
 
-makeDirectoryString :: [Item] -> IO String
+makeDirectoryString :: [Item] -> IO ()
 makeDirectoryString [] = do
-  return []
+  return ()
 makeDirectoryString (File x:xs) = do
-  rest <- makeDirectoryString xs
-  return (x ++ "\n" ++ rest)
+  putStrLn x
+  makeDirectoryString xs
 makeDirectoryString (Directory x:xs) = do
-  current <- showDirectory x
-  rest <- makeDirectoryString xs
-  return (x ++ "\n" ++ current ++ rest)
+  putStrLn x
+  showDirectory x
+  makeDirectoryString xs
 
-showDirectory :: String -> IO String
+showDirectory :: String -> IO ()
 showDirectory x = do
   contents <- directoryContents x
   items <- makeItemList contents
-  y <- makeDirectoryString items
-  return y
+  makeDirectoryString items
   
 main = do
   args <- getArgs
@@ -64,5 +63,4 @@ main = do
         then do
           putStrLn "Only one argument allowed."
         else do
-          dirString <- showDirectory $ head args
-          putStr dirString
+          showDirectory $ head args
