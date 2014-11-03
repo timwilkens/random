@@ -2,9 +2,6 @@ import System.Directory
 import System.Environment
 import Data.List
 
-data Item = Directory String
-          | File String
-
 directoryContents :: String -> IO [String]
 directoryContents dir = do
   let dirAdjusted = if (last dir) == '/' then dir
@@ -15,43 +12,25 @@ directoryContents dir = do
 
   return files
 
-makeItemList :: [String] -> IO [Item]
-makeItemList [] = do
-  return []
-makeItemList (x:xs) = do
-  i <- makeItem x
-  end <- makeItemList xs
-  return (i:end)
-
-makeItem :: String -> IO Item
-makeItem x = do
-  fileExists <- doesFileExist x
-  dirExists <- doesDirectoryExist x
-  if fileExists && not dirExists
-    then do
-      return $ File x
-    else if dirExists && not fileExists
-      then do
-        return $ Directory x
-	else do
-      error $ "Bad item " ++ x
-
-makeDirectoryString :: [Item] -> IO ()
+makeDirectoryString :: [String] -> IO ()
 makeDirectoryString [] = do
   return ()
-makeDirectoryString (File x:xs) = do
+makeDirectoryString (x:xs) = do
   putStrLn x
-  makeDirectoryString xs
-makeDirectoryString (Directory x:xs) = do
-  putStrLn x
-  showDirectory x
-  makeDirectoryString xs
+  isDirectory <- doesDirectoryExist x
+  isFile <- doesFileExist x
+
+  if isDirectory && not isFile
+    then do
+      showDirectory x
+      makeDirectoryString xs
+    else do
+      makeDirectoryString xs
 
 showDirectory :: String -> IO ()
 showDirectory x = do
   contents <- directoryContents x
-  items <- makeItemList contents
-  makeDirectoryString items
+  makeDirectoryString contents
   
 main = do
   args <- getArgs
