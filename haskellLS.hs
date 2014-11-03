@@ -1,4 +1,5 @@
 import System.Directory
+import System.Environment
 import Data.List
 
 data Item = Directory String
@@ -54,5 +55,14 @@ showDirectory x = do
   return y
   
 main = do
-  string <- showDirectory "/Users/timwilkensf1/random"
-  putStr string
+  args <- getArgs
+  if null args
+    then do
+      putStrLn "Must provide directory."
+    else do
+      if (length args /= 1)
+        then do
+          putStrLn "Only one argument allowed."
+        else do
+          dirString <- showDirectory $ head args
+          putStr dirString
