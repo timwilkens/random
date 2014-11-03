@@ -4,10 +4,6 @@ import Data.List
 data Item = Directory String
           | File String
 
-instance Show Item where
-  show (Directory x) = "D => " ++ x ++ "\n"
-  show (File x) = "F: " ++ x ++ "\n"
-
 directoryContents :: String -> IO [String]
 directoryContents dir = do
   let dirAdjusted = if (last dir) == '/' then dir
@@ -48,7 +44,7 @@ makeDirectoryString (File x:xs) = do
 makeDirectoryString (Directory x:xs) = do
   current <- showDirectory x
   rest <- makeDirectoryString xs
-  return (x ++ "\n" ++ current ++ "\n" ++ rest)
+  return (x ++ "\n" ++ current ++ rest)
 
 showDirectory :: String -> IO String
 showDirectory x = do
@@ -58,5 +54,5 @@ showDirectory x = do
   return y
   
 main = do
-  string <- showDirectory "/Users/timwilkensf1"
-  putStrLn string
+  string <- showDirectory "/Users/timwilkensf1/random"
+  putStr string
