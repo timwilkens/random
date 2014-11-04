@@ -49,6 +49,7 @@ compareItem (x,y) = do
         result <- sameFile x y
         return result
       else do
+        putStrLn $ "Item type mismatch: " ++ x ++ " " ++ y
         return False
 
 mapDirItems :: [(String, String)] -> IO [Bool]
@@ -67,6 +68,7 @@ sameDirectory x y = do
 
   if length dir1Contents /= length dir2Contents
     then do
+      putStrLn $ "Dir contents mismatch: " ++ x ++ " " ++ y
       return False
     else do
       let matched = zip dir1Contents dir2Contents
@@ -81,6 +83,7 @@ sameFile x y = do
 
   if file1Exists /= file2Exists
     then do
+      putStrLn $ "File mismatch: " ++ x ++ " or " ++ y ++ " doesn't exist."
       return False
     else if file1Exists
       then do
@@ -90,9 +93,10 @@ sameFile x y = do
           then do
             return True
           else do
+            putStrLn $ "File contents mismatch: " ++ x ++ " " ++ y
             return False
      else do
-       return False
+       return True
 
 usage :: IO ()
 usage = do
