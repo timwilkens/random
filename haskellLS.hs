@@ -7,7 +7,7 @@ directoryContents dir = do
   let dirAdjusted = if (last dir) == '/' then dir
                                          else dir ++ "/"  
   contents <- getDirectoryContents dirAdjusted
-  let files = map (dirAdjusted ++) $ filter notRelative contents
+  let files = sort $ map (dirAdjusted ++) $ filter notRelative contents
               where notRelative x = (x /= "." && x /= "..")
 
   return files
