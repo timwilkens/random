@@ -66,4 +66,16 @@ main = do
         then do
           usage
         else do
-          showDirectory $ head args
+          let dir1 = head args
+          let dir2 = args !! 1
+          dir1Exists <- doesDirectoryExist dir1
+          dir2Exists <- doesDirectoryExist dir2
+          if dir1Exists && dir2Exists
+            then do
+              showDirectory $ head args
+            else do
+              if not dir1Exists
+                 then do
+                   putStrLn $ dir1 ++ " does not exist."
+                 else do
+                   putStrLn $ dir2 ++ " does not exist."
