@@ -1,6 +1,7 @@
 import System.Directory
 import System.Environment
 import Data.List
+import Data.Monoid
 
 directoryContents :: String -> IO [String]
 directoryContents dir = do
@@ -31,6 +32,47 @@ showDirectory :: String -> IO ()
 showDirectory x = do
   contents <- directoryContents x
   makeDirectoryString contents
+
+compareItem :: (String, String) -> IO Bool
+compareItem (x,y) = do
+  isDirectory1 <- doesDirectoryExist x
+  isFile1 <- doesFileExist x
+  isDirectory2 <- doesDirectoryExist y
+  isFile2 <- doesFileExist y
+
+  if isDirectory1 && isDirectory2
+    then do
+      result <- sameDirectory x y
+      return result
+    else if isFile1 && isFile2
+      then do
+        result <- sameFile x y
+        return result
+      else do
+        return False
+
+mapDirItems :: [(String, String)] -> IO [Bool]
+mapDirItems [] = do
+  return []
+mapDirItems ((x, y):xs) = do
+  first <- compareItem (x,y)
+  rest <- mapDirItems xs
+  return (first:rest)
+
+
+sameDirectory :: String -> String -> IO Bool
+sameDirectory x y = do
+  dir1Contents <- directoryContents x
+  dir2Contents <- directoryContents y
+
+  if length dir1Contents /= length dir2Contents
+    then do
+      return False
+    else do
+      let matched = zip dir1Contents dir2Contents
+      mapped <- mapDirItems matched
+      let result = getAll $ mconcat $ map All mapped
+      return result
 
 sameFile :: String -> String -> IO Bool
 sameFile x y = do
@@ -72,7 +114,8 @@ main = do
           dir2Exists <- doesDirectoryExist dir2
           if dir1Exists && dir2Exists
             then do
-              showDirectory $ head args
+              result <- sameDirectory dir1 dir2
+              putStrLn $ show result
             else do
               if not dir1Exists
                  then do
