@@ -13,26 +13,6 @@ directoryContents dir = do
 
   return files
 
-makeDirectoryString :: [String] -> IO ()
-makeDirectoryString [] = do
-  return ()
-makeDirectoryString (x:xs) = do
-  putStrLn x
-  isDirectory <- doesDirectoryExist x
-  isFile <- doesFileExist x
-
-  if isDirectory && not isFile
-    then do
-      showDirectory x
-      makeDirectoryString xs
-    else do
-      makeDirectoryString xs
-
-showDirectory :: String -> IO ()
-showDirectory x = do
-  contents <- directoryContents x
-  makeDirectoryString contents
-
 compareItem :: (String, String) -> IO Bool
 compareItem (x,y) = do
   isDirectory1 <- doesDirectoryExist x
