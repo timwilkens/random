@@ -34,7 +34,7 @@ showDirectory x = do
 
 usage :: IO ()
 usage = do
-  putStrLn "Usage: haskellLS dir1 dir2"
+  putStrLn "Usage: fast_compare dir1 dir2"
   
 main = do
   args <- getArgs
