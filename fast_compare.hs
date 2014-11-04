@@ -32,6 +32,26 @@ showDirectory x = do
   contents <- directoryContents x
   makeDirectoryString contents
 
+sameFile :: String -> String -> IO Bool
+sameFile x y = do
+  file1Exists <- doesFileExist x
+  file2Exists <- doesFileExist y
+
+  if file1Exists /= file2Exists
+    then do
+      return False
+    else if file1Exists
+      then do
+        file1 <- readFile x
+        file2 <- readFile y
+        if file1 == file2
+          then do
+            return True
+          else do
+            return False
+     else do
+       return False
+
 usage :: IO ()
 usage = do
   putStrLn "Usage: fast_compare dir1 dir2"
