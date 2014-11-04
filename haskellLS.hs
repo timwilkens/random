@@ -31,15 +31,19 @@ showDirectory :: String -> IO ()
 showDirectory x = do
   contents <- directoryContents x
   makeDirectoryString contents
+
+usage :: IO ()
+usage = do
+  putStrLn "Usage: haskellLS dir1 dir2"
   
 main = do
   args <- getArgs
   if null args
     then do
-      putStrLn "Must provide directory."
+      usage
     else do
-      if (length args /= 1)
+      if (length args /= 2)
         then do
-          putStrLn "Only one argument allowed."
+          usage
         else do
           showDirectory $ head args
