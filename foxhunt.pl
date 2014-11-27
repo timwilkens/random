@@ -25,7 +25,6 @@
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Getopt::Long;
 
 my $banner = <<EOF;
@@ -58,12 +57,8 @@ if (!$prey) {
 
 print $banner;
 
-if ($prey !~ /^http:\/\//) {
+if ($prey !~ /^https?:\/\//) {
   $prey = ("http://" . $prey);
-}
-
-if ($prey !~ /\/$/) {
-  $prey .= "/";
 }
 
 $work{$prey} = 1;
@@ -72,7 +67,7 @@ my $hound = Hound->new();
 if ($proxy) {
   if ($proxy_port) {
     print "Proxy: $proxy:$proxy_port\n\n";
-    $hound->proxy(['http', 'https'], "http://$proxy:$proxy_port/");
+    $hound->set_proxy("http://$proxy:$proxy_port/");
   } else {
     die "Must provide --proxy AND --port.\n";
   }
@@ -114,27 +109,29 @@ sub get_work {
 
 
 BEGIN {
+
 package Hound;
 
 use strict;
 use warnings;
 
-use base 'WWW::Mechanize';
+use WWW::Mechanize;
 
 my @AGENTS = WWW::Mechanize::known_agent_aliases();
 
 sub new {
   my $class = shift;
   my $self = bless {}, $class;
-  $self->add_header(Referer => undef);
-  $self->max_redirect(0);
+  $self->{nose} = WWW::Mechanize->new();
+  $self->{nose}->add_header(Referer => undef);
+  $self->{nose}->max_redirect(0);
   return $self;
 }
 
 sub get_expanded_links {
   my $self = shift;
-  my @links = $self->links();
-  my $base = $hound->uri();
+  my @links = $self->{nose}->links();
+  my $base = $self->{nose}->uri();
   $base =~ s/\/$//;
   @links = map { if ($_ =~ /^\//) { $base . "/$_" } else { $_ } }  @links;
   return map  { $_ =~ s/(?<!:)\/+/\//g; $_ }
@@ -147,8 +144,8 @@ sub get_expanded_links {
 sub smells_fox {
   my ($self, $url) = @_;
   $self->update_useragent();
-  eval { $self->get($url); };
-  if ($@ || $self->status() != 200) {
+  eval { $self->{nose}->get($url); };
+  if ($@ || $self->{nose}->status() != 200) {
     return 0;
   }
   return 1;
@@ -156,32 +153,38 @@ sub smells_fox {
 
 sub update_useragent {
   my $self = shift;
-  $self->agent_alias($AGENTS[rand(@AGENTS)]);
+  $self->{nose}->agent_alias($AGENTS[rand(@AGENTS)]);
 }
 
 sub killed_fox {
-  my $hound = shift;
-  return 0 unless $hound->fox_in_sight();
-  my $fox = $hound->uri();
+  my $self = shift;
+  return 0 unless $self->fox_in_sight();
+  my $fox = $self->{nose}->uri();
   $fox = ($fox =~ /\/$/) ? "$fox" . "$bullet/" : "$fox/" . "$bullet/";
-  if ($hound->smells_fox($fox)) {
-    return $hound->fox_is_dead();
+  if ($self->smells_fox($fox)) {
+    return $self->fox_is_dead();
   } else {
     return 0;
   }
 }
 
 sub fox_in_sight {
-  my $hound = shift;
-  my $content = $hound->content(decoded_by_headers => 1);
-  my $u = $hound->uri();
+  my $self = shift;
+  my $content = $self->{nose}->content(decoded_by_headers => 1);
+  my $u = $self->{nose}->uri();
   return ($content =~ /$u/) ? 1 : 0;
 }
 
 sub fox_is_dead {
-  my $hound = shift;
-  my $content = $hound->content(decoded_by_headers => 1);
+  my $self = shift;
+  my $content = $self->{nose}->content(decoded_by_headers => 1);
   return ($content =~ /(?<!\\)$bullet/) ? 1 : 0;
+}
+
+
+sub set_proxy {
+  my $self = shift;
+  $self->{nose}->proxy(['http', 'https'], "http://$proxy:$proxy_port/");
 }
 
 }
