@@ -25,6 +25,7 @@
 use strict;
 use warnings;
 
+use Data::Dumper;
 use Getopt::Long;
 
 my $banner = <<EOF;
@@ -74,7 +75,7 @@ if ($proxy) {
 }
 
 while (my $fox = get_work()) {
-  sleep(1);
+  sleep(3);
   if ($hound->smells_fox($fox)) {
     add_work($hound->get_expanded_links());
     if ($hound->killed_fox()) {
@@ -85,7 +86,7 @@ while (my $fox = get_work()) {
   print "$fox\n";
 }
 
-print "No more game. Exiting.\n";
+print "All I see are trees. Exiting.\n";
 
 sub add_work {
   my @links = @_;
@@ -135,7 +136,7 @@ sub get_expanded_links {
   $base =~ s/\/$//;
   @links = map { if ($_ =~ /^\//) { $base . "/$_" } else { $_ } }  @links;
   return map  { $_ =~ s/(?<!:)\/+/\//g; $_ }
-         grep { $_ !~ /\.(png|jpg|gif|css)/ }
+         grep { $_ !~ /\.(png|jpe?g|gif|css)/ }
          grep { $_ =~ /^http/ }
          grep { $_ !~ /^\// }
          map  { $_->url() } @links;
@@ -181,10 +182,9 @@ sub fox_is_dead {
   return ($content =~ /(?<!\\)$bullet/) ? 1 : 0;
 }
 
-
 sub set_proxy {
-  my $self = shift;
-  $self->{nose}->proxy(['http', 'https'], "http://$proxy:$proxy_port/");
+  my ($self, $proxy) = @_;
+  $self->{nose}->proxy(['http', 'https'], $proxy);
 }
 
 }
