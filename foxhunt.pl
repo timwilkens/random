@@ -62,7 +62,7 @@ if ($seed !~ /^https?:\/\//) {
   $seed = ("http://" . $seed);
 }
 
-$work{$seed} = 1;
+add_work(($seed));
 my $hound = Hound->new(confine => $confine);
 
 while (my $url = get_work()) {
@@ -82,9 +82,8 @@ print "All done. Exiting.\n";
 sub add_work {
   my @links = @_;
   for my $l (@links) {
-    my $normalized = $l;
-    $normalized .= "/" unless ($normalized =~ /\/$/);
-    if (!$seen{$normalized}) {
+    my $normal = normalize($l);
+    if (!$seen{$normal}) {
       $work{$l} = 1;
     }
   }
@@ -94,11 +93,18 @@ sub get_work {
   if (keys %work) {
     my $url = (keys %work)[0];
     delete $work{$url};
-    $seen{$url} = 1;
+    my $normal = normalize($url);
+    $seen{$normal} = 1;
     return $url;
   } else {
     return undef;
   }
+}
+
+sub normalize {
+  my $url = shift;
+  $url .= "/" unless ($url =~ /\/$/);
+  return $url;
 }
 
 
@@ -142,7 +148,7 @@ sub get_all_links {
   $self->{extractor}->parse($html);
 
   my $base = $self->{previous_response}->base->as_string;
-  my @links = grep { $_ !~ /javascript/ }
+  my @links = grep { $_ !~ /javascript|#|((png|zip|jpg|jpeg|gif|css|js)$)/ }
               map  { $_ = url($_, $base)->abs; } @LINKS;
 
   if ($self->{confine}) {
