@@ -125,7 +125,7 @@ sub link_parser {
 sub new {
   my ($class, %args) = @_;
   my $self = bless {}, $class;
-  $self->{fetcher} = LWP::UserAgent->new();
+  $self->{fetcher} = LWP::UserAgent->new;
   $self->{fetcher}->max_redirect(0);
   $self->{fetcher}->agent("fake");
   $self->{extractor} = HTML::LinkExtor->new(\&link_parser);
@@ -156,7 +156,7 @@ sub get_all_links {
 
 sub fetch {
   my ($self, $url) = @_;
-  $self->update_useragent();
+  $self->update_useragent;
   my $request = HTTP::Request->new('GET' => $url);
   $request->header('Referer' => '');
 
