@@ -25,7 +25,9 @@
 use strict;
 use warnings;
 
-use Data::Dumper;
+# Set ENV VAR PERL_LWP_SSL_VERIFY_HOSTNAME to 0
+# or get Mozilla::CA
+
 use Getopt::Long;
 
 my $banner = <<EOF;
@@ -43,55 +45,46 @@ EOF
 my %work;
 my %seen;
 
-my $bullet = "\"<<>";
 
-my ($prey, $proxy, $proxy_port);
+my ($seed, $confine);
 GetOptions(
-  "prey=s" => \$prey,
-  "proxy=s" => \$proxy,
-  "port=s" => \$proxy_port,
+  "seed=s"    => \$seed,
+  "confine=s" => \$confine,
 );
 
-if (!$prey) {
-  die "Must provide --prey url.\n";
+if (!$seed) {
+  die "Must provide --seed url.\n";
 }
 
 print $banner;
 
-if ($prey !~ /^https?:\/\//) {
-  $prey = ("http://" . $prey);
+if ($seed !~ /^https?:\/\//) {
+  $seed = ("http://" . $seed);
 }
 
-$work{$prey} = 1;
+$work{$seed} = 1;
+my $hound = Hound->new(confine => $confine);
 
-my $hound = Hound->new();
-if ($proxy) {
-  if ($proxy_port) {
-    print "Proxy: $proxy:$proxy_port\n\n";
-    $hound->set_proxy("http://$proxy:$proxy_port/");
-  } else {
-    die "Must provide --proxy AND --port.\n";
-  }
-}
-
-while (my $fox = get_work()) {
-  sleep(3);
-  if ($hound->smells_fox($fox)) {
-    add_work($hound->get_expanded_links());
-    if ($hound->killed_fox()) {
-      print "\033[31m$fox\033[0m\n";
-      next;
+while (my $url = get_work()) {
+  print "$url";
+  if ($hound->url_is_reflected($url)) {
+    if ($hound->payload_is_reflected($url)) {
+      print " \033[31mVULNERABLE\033[0m";
     }
   }
-  print "$fox\n";
+  print "\n";
+  add_work($hound->get_all_links);
+  sleep(3);
 }
 
-print "All I see are trees. Exiting.\n";
+print "All done. Exiting.\n";
 
 sub add_work {
   my @links = @_;
   for my $l (@links) {
-    if (!$seen{$l}) {
+    my $normalized = $l;
+    $normalized .= "/" unless ($normalized =~ /\/$/);
+    if (!$seen{$normalized}) {
       $work{$l} = 1;
     }
   }
@@ -116,75 +109,88 @@ package Hound;
 use strict;
 use warnings;
 
-use WWW::Mechanize;
+use LWP::UserAgent;
+use HTML::LinkExtor;
+use URI::URL;
+use HTTP::Request;
 
-my @AGENTS = WWW::Mechanize::known_agent_aliases();
+my @LINKS;
+
+sub link_parser {
+  my($tag, %attr) = @_;
+  return if $tag eq 'img';
+  push(@LINKS, values %attr);
+}
 
 sub new {
-  my $class = shift;
+  my ($class, %args) = @_;
   my $self = bless {}, $class;
-  $self->{nose} = WWW::Mechanize->new();
-  $self->{nose}->add_header(Referer => undef);
-  $self->{nose}->max_redirect(0);
+  $self->{fetcher} = LWP::UserAgent->new();
+  $self->{fetcher}->max_redirect(0);
+  $self->{fetcher}->agent("fake");
+  $self->{extractor} = HTML::LinkExtor->new(\&link_parser);
+  $self->{payload} = "\"<<>";
+  $self->{previous_response} = undef;
+  $self->{confine} = $args{confine};
   return $self;
 }
 
-sub get_expanded_links {
+sub get_all_links {
   my $self = shift;
-  my @links = $self->{nose}->links();
-  my $base = $self->{nose}->uri();
-  $base =~ s/\/$//;
-  @links = map { if ($_ =~ /^\//) { $base . "/$_" } else { $_ } }  @links;
-  return map  { $_ =~ s/(?<!:)\/+/\//g; $_ }
-         grep { $_ !~ /\.(png|jpe?g|gif|css)/ }
-         grep { $_ =~ /^http/ }
-         grep { $_ !~ /^\// }
-         map  { $_->url() } @links;
+  return unless $self->{previous_response};
+  my $html = $self->{previous_response}->content;
+  $self->{extractor}->parse($html);
+
+  my $base = $self->{previous_response}->base->as_string;
+  my @links = grep { $_ !~ /javascript/ }
+              map  { $_ = url($_, $base)->abs; } @LINKS;
+
+  if ($self->{confine}) {
+    @links = grep { $_ =~ /$self->{confine}/ } @links;
+  }
+
+  @LINKS = undef;
+  $self->{previous_response} = undef;
+  return @links;
 }
 
-sub smells_fox {
+sub fetch {
   my ($self, $url) = @_;
   $self->update_useragent();
-  eval { $self->{nose}->get($url); };
-  if ($@ || $self->{nose}->status() != 200) {
-    return 0;
-  }
-  return 1;
+  my $request = HTTP::Request->new('GET' => $url);
+  $request->header('Referer' => '');
+
+  return $self->{fetcher}->request($request);
 }
 
 sub update_useragent {
   my $self = shift;
-  $self->{nose}->agent_alias($AGENTS[rand(@AGENTS)]);
+  # TODO
+#  $self->{nose}->agent_alias($AGENTS[rand(@AGENTS)]);
 }
 
-sub killed_fox {
-  my $self = shift;
-  return 0 unless $self->fox_in_sight();
-  my $fox = $self->{nose}->uri();
-  $fox = ($fox =~ /\/$/) ? "$fox" . "$bullet/" : "$fox/" . "$bullet/";
-  if ($self->smells_fox($fox)) {
-    return $self->fox_is_dead();
-  } else {
-    return 0;
-  }
+sub create_injected {
+  my ($self, $url) = @_;
+  return ($url =~ /\/$/) ? "$url" . "$self->{payload}/" : "$url/" . "$self->{payload}/";
 }
 
-sub fox_in_sight {
-  my $self = shift;
-  my $content = $self->{nose}->content(decoded_by_headers => 1);
-  my $u = $self->{nose}->uri();
+sub url_is_reflected {
+  my ($self, $url) = @_;
+  my $response = $self->fetch($url);
+  $hound->{previous_response} = $response;
+  return 0 if (!$response->is_success);
+  my $content = $response->content;
+  my $u = $response->base->as_string;
   return ($content =~ /$u/) ? 1 : 0;
 }
 
-sub fox_is_dead {
-  my $self = shift;
-  my $content = $self->{nose}->content(decoded_by_headers => 1);
-  return ($content =~ /(?<!\\)$bullet/) ? 1 : 0;
-}
-
-sub set_proxy {
-  my ($self, $proxy) = @_;
-  $self->{nose}->proxy(['http', 'https'], $proxy);
+sub payload_is_reflected {
+  my ($self, $url) = @_;
+  my $inject_url = $self->create_injected($url);
+  my $response = $hound->fetch($inject_url);
+  return 0 if (!$response->is_success);
+  my $content = $response->content;
+  return ($content =~ /(?<!\\)$self->{payload}/) ? 1 : 0;
 }
 
 }
