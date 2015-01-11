@@ -41,8 +41,7 @@ cubeToSeq c = [front c, back c, left c, right c, top c, bottom c]
 
 isSolved :: Cube -> Bool
 isSolved c = isSolved' $ cubeToSeq c
---  where isSolved' xs = all (==True) (map solvedSide xs)
-  where isSolved' xs = any (==True) (map solvedSide xs)
+  where isSolved' xs = all (==True) (map solvedSide xs)
 
 solvedSide :: S.Seq Color -> Bool
 solvedSide xs = all (==True) (map (== h) end)
@@ -70,16 +69,16 @@ applyMoves [] c = c
 applyMoves (x:xs) c = applyMoves xs (applyMove x c)
 
 moves :: [Move]
-moves = [rotateFrontRight, rotateZAxisRight, rotateYAxisForward,
-         rotateTopClockwise, rotateLeftForward, rotateXAxisRight]
+moves = [rotateFrontRight, rotateFrontLeft, rotateZAxisRight, rotateZAxisLeft,
+         rotateYAxisForward, rotateYAxisBack, rotateTopClockwise, rotateTopCounterC,
+         rotateLeftForward, rotateLeftBack, rotateXAxisRight, rotateXAxisLeft]
 
-base :: [[[Move]]]
-base = [addMoves []]
+base :: [[Move]]
+base = addMoves []
 
-addMovesOfNPlusOne :: [[[Move]]] -> [[[Move]]]
-addMovesOfNPlusOne (x:xs) = (buildMoves x):((filter (\y -> isSolved (applyMoves y cube)) x):xs)
---addMovesOfNPlusOne (x:xs) = (buildMoves x):(x:xs)
-addMovesOfNPlusOne [] = base
+buildMovesOfNPlusOne :: [[Move]] -> [[Move]]
+buildMovesOfNPlusOne (x:xs) = buildMoves (x:xs)
+buildMovesOfNPlusOne [] = base
 
 addMoves :: [Move] -> [[Move]]
 addMoves m = filter noRepeats $ map (\x -> m ++ [x]) moves
@@ -87,14 +86,19 @@ addMoves m = filter noRepeats $ map (\x -> m ++ [x]) moves
 buildMoves :: [[Move]] -> [[Move]]
 buildMoves m = concatMap addMoves m
 
-buildAll :: Int -> [[[Move]]]
--- Add reverse at the start to do breadth first search
--- Without we start from leaves and contract
-buildAll max = reverse $ buildAll' base 1 max
-  where buildAll' xs n max =
-          if n == max
-            then xs
-            else buildAll' (addMovesOfNPlusOne xs) (n + 1) max
+solve :: Cube -> Int -> [[Move]]
+solve c maxDepth = case isSolved c of
+  -- Return early for already solved cube.
+  True ->  []
+  False -> solve' c 1 maxDepth base
+
+solve' :: Cube -> Int -> Int -> [[Move]] -> [[Move]]
+solve' c n max moves
+  | n >= max = []
+  | otherwise = if length solutions > 0
+                   then solutions
+                   else solve' c (n + 1) max (buildMovesOfNPlusOne moves)
+                     where solutions = filter (\x -> isSolved (applyMoves x c)) moves
 
 noRepeats :: [Move] -> Bool
 noRepeats x = noMoveUndo x' && noMoveCycle x'
@@ -273,14 +277,21 @@ cube = Cube { front = fronts
             , top = tops
             }
 
-solutions :: Int -> [[[Move]]]
-solutions max = map checkForSolutions $ buildAll max
+solvedCube = Cube { front = S.fromList $ replicate 9 Green
+            , back = S.fromList $ replicate 9 Blue
+            , left = S.fromList $ replicate 9 Orange
+            , right = S.fromList $ replicate 9 Red
+            , bottom = S.fromList $ replicate 9 Yellow
+            , top = S.fromList $ replicate 9 White
+            }
 
-checkForSolutions :: [[Move]] -> [[Move]]
-checkForSolutions xs =  filter (\x -> isSolved (applyMoves x cube)) xs
+slightlyScrambled :: Cube
+slightlyScrambled = yAxisBackward $ frontLeft $ leftBackward $ xAxisRight $ topCC $ zAxisLeft solvedCube
 
 main = do
   args <- getArgs
-  let maxDepth = (head args)
-  putStrLn $ "Setting max depth to " ++ show (head args)
-  putStrLn $ show $ buildAll (read maxDepth)
+  case args of
+    [] -> putStrLn "Must provide max depth as argument"
+    xs -> do let maxDepth = read (head xs)
+             putStrLn $ "Setting max depth to " ++ show maxDepth
+             putStrLn $ show $ solve slightlyScrambled maxDepth
