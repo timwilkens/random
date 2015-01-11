@@ -66,7 +66,7 @@ applyMove (Move m _) c = m c
 
 applyMoves :: [Move] -> Cube -> Cube
 applyMoves [] c = c
-applyMoves (x:xs) c = applyMoves xs (applyMove x c)
+applyMoves (x:xs) c = applyMoves xs $! (applyMove x c)
 
 moves :: [Move]
 moves = [rotateFrontRight, rotateFrontLeft, rotateZAxisRight, rotateZAxisLeft,
@@ -90,23 +90,23 @@ solve :: Cube -> Int -> [[Move]]
 solve c maxDepth = case isSolved c of
   -- Return early for already solved cube.
   True ->  []
-  False -> solve' c 1 maxDepth base
+  False -> solve' c 1 maxDepth $! base
 
 solve' :: Cube -> Int -> Int -> [[Move]] -> [[Move]]
 solve' c n max moves
   | n >= max = []
   | otherwise = if length solutions > 0
                    then solutions
-                   else solve' c (n + 1) max (buildMovesOfNPlusOne moves)
-                     where solutions = filter (\x -> isSolved (applyMoves x c)) moves
+                   else solve' c (n + 1) max $! (buildMovesOfNPlusOne moves)
+                     where solutions = filter (\x -> (isSolved $! (applyMoves x c))) moves
 
 noRepeats :: [Move] -> Bool
-noRepeats x = noMoveUndo x' && noMoveCycle x'
+noRepeats x = (noMoveUndo $! x') && (noMoveCycle $! x')
   where x' = reverse x
 
 noMoveCycle :: [Move] -> Bool
-noMoveCycle (a:b:c:d:_) = 
-  if (a == b) && (b == c) && (c == d)
+noMoveCycle (a:b:c:_) =
+  if (a == b) && (b == c)
     then False
     else True
 noMoveCycle _ = True
@@ -294,4 +294,4 @@ main = do
     [] -> putStrLn "Must provide max depth as argument"
     xs -> do let maxDepth = read (head xs)
              putStrLn $ "Setting max depth to " ++ show maxDepth
-             putStrLn $ show $ solve slightlyScrambled maxDepth
+             putStrLn $ show $ solve cube maxDepth
