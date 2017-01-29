@@ -3,6 +3,7 @@
 module Main where
 
 import           Control.Concurrent.Thread.Delay (delay)
+import           Control.Concurrent.Async        (mapConcurrently)
 import           Control.Exception               as E
 import           Control.Lens
 import           Data.Aeson
@@ -106,21 +107,20 @@ getPrettyTime = formatTime defaultTimeLocale "%c"
 getPrettyTimeFromItemTimeStamp :: Maybe Integer -> String
 getPrettyTimeFromItemTimeStamp t = getPrettyTime $ posixSecondsToUTCTime $ realToFrac (fromMaybe 0 t)
 
-fetchItemChunk :: [Integer] -> IO Integer
+fetchItemChunk :: [Integer] -> IO ()
 fetchItemChunk ids = fetchItemChunk' ids 0
   where
-    fetchItemChunk' [] failures = return failures
+    fetchItemChunk' [] _ = return ()
     fetchItemChunk' ids failures
-      | failures >= maxFailures = return failures
+      | failures >= maxFailures = return ()
       | otherwise =
-        forM ids (\x -> do
+        mapConcurrently (\x -> do
           r <- getItemInfo x
           case r of
             Left e -> return (1,[x])
             Right (info, prettyTime) -> do
-              P.putStrLn $ prettyTime ++ " " ++ info
-              P.putStrLn ""
-              return (0, [])) >>= \ts ->
+              P.putStrLn $ prettyTime ++ " " ++ info ++ "\n"
+              return (0, [])) ids >>= \ts ->
                 fetchItemChunk' (P.concatMap snd ts) (sum $ P.map fst ts)
 
 fetchLoop :: Integer -> Integer -> IO ()
@@ -128,7 +128,7 @@ fetchLoop previousId failures
   | failures >= maxFailures =
       P.putStrLn "Number of consecutive failures exceeded"
   | otherwise = do
-      delay (microPerSecond * 3)
+      delay (microPerSecond * 5)
       maxItemId <- getMaxItemId
       case maxItemId of
         Left e -> fetchLoop previousId (failures + 1)
@@ -144,9 +144,10 @@ mainLoop failures
       P.putStrLn "Max failures exceeded getting max item id"
   | otherwise = do
       maxItemId <- getMaxItemId
-      case maxItemId of
-        Left e   -> mainLoop (failures + 1)
-        Right id -> fetchLoop (id-1) 0
+      either
+        (const $ mainLoop (failures + 1))
+        (\id -> fetchLoop (id-1) 0)
+        maxItemId
 
 main :: IO ()
 main = do
