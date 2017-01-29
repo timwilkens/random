@@ -117,18 +117,19 @@ fetchItemChunk ids = fetchItemChunk' ids 0
         mapConcurrently (\x -> do
           r <- getItemInfo x
           case r of
-            Left e -> return (1,[x])
+            Left e -> return [x]
             Right (info, prettyTime) -> do
               P.putStrLn $ prettyTime ++ " " ++ info ++ "\n"
-              return (0, [])) ids >>= \ts ->
-                fetchItemChunk' (P.concatMap snd ts) (sum $ P.map fst ts)
+              return []) ids >>= \ts ->
+                delay microPerSecond >>
+                  fetchItemChunk' (P.concat ts) (failures + 1)
 
 fetchLoop :: Integer -> Integer -> IO ()
 fetchLoop previousId failures
   | failures >= maxFailures =
       P.putStrLn "Number of consecutive failures exceeded"
   | otherwise = do
-      delay (microPerSecond * 5)
+      delay (microPerSecond * 3)
       maxItemId <- getMaxItemId
       case maxItemId of
         Left e -> fetchLoop previousId (failures + 1)
